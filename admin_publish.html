@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>发布新闻</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/jquery-1.11.0.min.js"></script>
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.css" rel="stylesheet">
+    <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.js"></script>
+</head>
+<style>
+    .image-container {
+        height: 0;
+        padding-bottom: 19%;
+        overflow: hidden;
+    }
+
+    .image-container img {
+        width: 100%;
+    }
+
+    .line_01 {
+        border: 0;
+        height: 1px;
+        background: #333;
+        background-image: linear-gradient(to right, #ccc, #333, #ccc);
+        margin-bottom: 10px;
+    }
+</style>
+<body>
+<div id="admin_publish">
+    <navigation v-bind:cname="componentList"></navigation>
+    <div class="col-sm-8 col-sm-offset-2 col-xs-offset-1 col-xs-10" style="margin-top: 80px">
+        <input type="text" class="form-control" style="font-size: 25px;height: 60px" id="title"
+               placeholder="请输入新闻标题"><br>
+        <textarea id="summernote" name="editordata"></textarea>
+        <div style="margin-bottom: 30px">
+            <button type="button" class="btn btn-info" @click="publish">发布新闻</button>
+        </div>
+        <div>
+            <div id="news" class="row list-group">
+                <div class="item list-group-item">
+                    <div class="thumbnail" v-for="news in news_list" v-bind:key="news.newsId">
+                        <div class="caption">
+                            <a target="_blank" v-bind:href="'news_detail.html?newsId='+news.newsId"><h3
+                                    class="group inner list-group-item-heading" onclick="">
+                                {{news.title}}<span
+                                    style="float: right;margin-right: 2%;color: #6b758d;font-weight: normal;font-size: 15px">
+                                {{dateFormat(news.time)}}</span></h3></a>
+                            <p class="group inner list-group-item-text" id="text_content"
+                               style="display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 3;overflow: hidden;">
+                                {{news.text}}
+                            </p>
+                        </div>
+                        <div class="line_01" v-if="news.imgUrls.length>0"></div>
+                        <div class="row">
+                            <div class="col-sm-4 col-xs-4 image-container" v-for="url in news.imgUrls">
+                                <img class="group list-group-image "
+                                     v-bind:src="url" alt=""/>
+                            </div>
+                        </div>
+                        <div class="line_01" v-if="news.imgUrls.length>0" style="margin-top: 5px"></div>
+                        <div class="row">
+                            <button class="btn btn-danger" style="float: right;margin-right: 3%"
+                                    @click="deleteNews(news.newsId)">删除新闻
+                            </button>
+                        </div>
+                    </div>
+
+
+                </div>
+                <button type="button" class="btn btn-info col-xs-offset-2 col-xs-8" @click="moreNews"
+                        id="more_news" style="margin-top: 20px">更多新闻
+                </button>
+            </div>
+        </div>
+        <div style="height: 100px"></div>
+    </div>
+
+
+</div>
+</body>
+<link href="css/summernote.css" rel="stylesheet">
+<script src="js/summernote.js"></script>
+<script src="js/summernote-zh-CN.js"></script>
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/axios.js"></script>
+<script src="js/admin_navigation.js"></script>
+<script src="js/url.js"></script>
+<script src="https://unpkg.com/dayjs"></script>
+<script>
+    var myVue = new Vue({
+        el: "#admin_publish",
+        data: function () {
+            return {
+                instance: '',
+                componentList: [false, false, false, false, true, false],
+                images: [],
+                news_list: [],
+                page: 0
+            }
+        },
+        created: function () {
+            axios.defaults.withCredentials = true;
+            this.instance = axios.create({
+                baseURL: baseUrl,
+                timeout: 5000
+            });
+        },
+        mounted: function () {
+            $('#summernote').summernote({
+                lang: 'zh-CN',
+                height: 300,
+                focus: true,
+                callbacks: {
+                    onImageUpload: function (files, editor, $editable) {
+                        var size = files[0].size;
+                        if ((size / 1024 / 1024) > 2) {
+                            alert("图片大小不能超过2M...");
+                            return false;
+                        }
+                        console.log("size=" + size);
+                        var formData = new FormData();
+                        let config = {
+                            headers: {'Content-Type': 'multipart/form-data'}
+                        };
+                        formData.append("file", files[0]);
+                        axios.post(baseUrl + '/user/newsImage', formData, config).then(res => {
+                            var obj = res.data;
+                            if (obj.status === 'success') {
+                                myVue.images.push(obj.data);
+                                $("#summernote").summernote('insertImage', obj.data);
+                            } else {
+                                if (obj.data === 'notLogin') {
+                                    window.location.href = 'login.html';
+                                } else {
+                                    alert(obj.data.errorMsg);
+                                    location.reload();
+                                }
+
+                            }
+                        });
+
+                    }
+                }
+            });
+            this.instance.get('/user/news_vo', {
+                params: {
+                    page: this.page
+                }
+            }).then(res => {
+                var obj = res.data;
+                if (obj.status === 'success') {
+                    this.news_list = obj.data;
+                    this.page++;
+
+                } else {
+                    if (obj.data === 'notLogin') {
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(obj.data.errorMsg);
+                        location.reload();
+                    }
+
+                }
+            })
+        },
+        methods: {
+            publish: function () {
+                var title = $("#title").val();
+                var content = $('#summernote').summernote('code');
+                var images = this.images;
+                var text = $(".note-editable").text();
+                if (title === "") {
+                    alert("标题不能为空");
+                    return;
+                }
+                if (content === "") {
+                    alert("内容不能为空");
+                    return;
+                }
+                this.instance.post('/user/news', {
+                    title: title,
+                    content: content,
+                    images: images,
+                    text: text
+                }).then(res => {
+                    let obj = res.data;
+                    if (obj.status === 'success') {
+                        alert("发布成功");
+                        location.reload();
+                    } else {
+                        if (obj.data === 'notLogin') {
+                            window.location.href = 'login.html';
+                        } else {
+                            alert(obj.data.errorMsg);
+                        }
+                    }
+                })
+            },
+            dateFormat: function (datetime) {
+                var time = dayjs(datetime).format('YYYY年MM月DD日 HH:mm:ss');
+                return time;
+            },
+            moreNews: function () {
+                this.instance.get('/user/news_vo', {
+                    params: {
+                        page: this.page
+                    }
+                }).then(res => {
+                    var obj = res.data;
+                    if (obj.status === 'success') {
+                        if (obj.data.length > 0) {
+                            for (var i = 0; i < obj.data.length; i++) {
+                                this.news_list.push(obj.data[i]);
+                            }
+                            this.page++;
+                        } else {
+                            $("#more_news").attr("disabled", "true");
+                            $("#more_news").text("没有更多了");
+                        }
+                    } else {
+                        if (obj.data === 'notLogin') {
+                            window.location.href = 'login.html';
+                        } else {
+                            alert(obj.data.errorMsg);
+                            location.reload();
+                        }
+
+                    }
+                })
+            },
+            deleteNews: function (newsId) {
+                var r = confirm("确定删除此条新闻吗？");
+                if (r === true) {
+                    this.instance.delete('/user/news/'+newsId).then(res=>{
+                        let obj = res.data;
+                        if (obj.status === 'success') {
+                            alert("删除成功");
+                            location.reload();
+                        } else {
+                            if (obj.data === 'notLogin') {
+                                window.location.href = 'login.html';
+                            } else {
+                                alert(obj.data.errorMsg);
+                            }
+                        }
+                    })
+                }else {
+                    return;
+                }
+            }
+        }
+    })
+</script>
+
+</html>

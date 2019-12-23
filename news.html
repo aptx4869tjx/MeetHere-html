@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻</title>
+    <script src="js/jquery-1.11.0.min.js"></script>
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.css" rel="stylesheet">
+    <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.js"></script>
+</head>
+<style>
+    .image-container {
+        height: 0;
+        padding-bottom: 19%;
+        overflow: hidden;
+    }
+
+    .image-container img {
+        width: 100%;
+    }
+
+    .line_01 {
+        border: 0;
+        height: 1px;
+        background: #333;
+        background-image: linear-gradient(to right, #ccc, #333, #ccc);
+        margin-bottom: 10px;
+    }
+</style>
+<body>
+<div id="news">
+    <navigation v-bind:cname="componentList"></navigation>
+    <div>
+        <div style="margin-top: 80px" class="col-sm-8 col-sm-offset-2 col-xs-offset-1 col-xs-10">
+            <div class="row list-group">
+                <div class="item list-group-item">
+                    <div class="thumbnail" v-for="news in news_list" v-bind:key="news.newsId">
+                        <div class="caption">
+                            <a target="_blank" v-bind:href="'news_detail.html?newsId='+news.newsId"><h3
+                                    class="group inner list-group-item-heading" onclick="">
+                                {{news.title}}<span
+                                    style="float: right;margin-right: 2%;color: #6b758d;font-weight: normal;font-size: 15px">
+                                {{dateFormat(news.time)}}</span></h3></a>
+                            <p class="group inner list-group-item-text" id="text_content"
+                               style="display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 3;overflow: hidden;">
+                                {{news.text}}
+                            </p>
+                        </div>
+                        <div class="line_01"></div>
+                        <div class="row">
+                            <div class="col-sm-4 col-xs-4 image-container" v-for="url in news.imgUrls">
+                                <img class="group list-group-image "
+                                     v-bind:src="url" alt=""/>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div style="height: 100px">
+                    <button type="button" class="btn btn-info col-xs-offset-2 col-xs-8" @click="moreNews"
+                            id="more_news" style="margin-top: 20px">更多新闻
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+</body>
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/axios.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/url.js"></script>
+<script src="https://unpkg.com/dayjs"></script>
+<script>
+    var myVUe = new Vue({
+        el: "#news",
+        data: function () {
+            return {
+                instance: '',
+                componentList: [false, false, true, false],
+                news_list: [],
+                page: 0
+            }
+        },
+        created: function () {
+            axios.defaults.withCredentials = true;
+            this.instance = axios.create({
+                baseURL: baseUrl,
+                timeout: 5000
+            });
+        },
+        mounted: function () {
+            this.instance.get('/user/news_vo', {
+                params: {
+                    page: this.page
+                }
+            }).then(res => {
+                var obj = res.data;
+                if (obj.status === 'success') {
+                    this.news_list = obj.data;
+                    this.page++;
+
+                } else {
+                    if (obj.data === 'notLogin') {
+                        alert("用户未登录");
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(obj.data.errorMsg);
+                        location.reload();
+                    }
+
+                }
+            })
+        },
+        methods: {
+            dateFormat: function (datetime) {
+                var time = dayjs(datetime).format('YYYY年MM月DD日 HH:mm:ss');
+                return time;
+            },
+            moreNews: function () {
+                this.instance.get('/user/news_vo', {
+                    params: {
+                        page: this.page
+                    }
+                }).then(res => {
+                    var obj = res.data;
+                    if (obj.status === 'success') {
+                        if (obj.data.length > 0) {
+                            for (var i = 0; i < obj.data.length; i++) {
+                                this.news_list.push(obj.data[i]);
+                            }
+                            this.page++;
+                        } else {
+                            $("#more_news").attr("disabled", "true");
+                            $("#more_news").text("没有更多了");
+                        }
+                    } else {
+                        if (obj.data === 'notLogin') {
+                            window.location.href = 'login.html';
+                        } else {
+                            alert(obj.data.errorMsg);
+                            location.reload();
+                        }
+
+                    }
+                })
+            }
+        }
+    })
+</script>
+</html>

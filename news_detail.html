@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新闻详情</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/jquery-1.11.0.min.js"></script>
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.css" rel="stylesheet">
+    <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.js"></script>
+</head>
+<body>
+<div id="news_detail">
+    <div style="text-align: center"><h3>{{news.title}}</h3><h5>发布者：{{news.username}}</h5><h6>{{dateFormat(news.time)}}</h6></div>
+    <div v-html="news.content" class="col-xs-10 col-xs-offset-1" style="text-align: center"></div>
+</div>
+</body>
+
+<script type="text/javascript" src="js/jquery.cookie.js"></script>
+<script src="js/vue.js"></script>
+<script src="js/axios.js"></script>
+<script src="js/admin_navigation.js"></script>
+<script src="js/url.js"></script>
+<script src="https://unpkg.com/dayjs"></script>
+<script>
+    var myVue = new Vue({
+        el: "#news_detail",
+        data: function () {
+            return {
+                instance: '',
+                news: '',
+                newsId: ''
+            }
+        },
+        created: function () {
+            axios.defaults.withCredentials = true;
+            this.instance = axios.create({
+                baseURL: baseUrl,
+                timeout: 5000
+            });
+            var loc = location.href;//获取整个跳转地址内容，其实就是你传过来的整个地址字符串
+            var n1 = loc.length;//地址的总长
+            var n2 = loc.indexOf("?");//取得=号的位置
+            var parameter = decodeURI(loc.substr(n2 + 1, n1 - n2));//截取从?号后面的内容,也就是参数列表，因为传过来的路径是加了码的，所以要解码
+            var parameters = parameter.split("&");//从&处拆分，返回字符串数组
+            console.log("参数列表" + parameters);
+            var paValue = new Array();//创建一个用于保存具体值得数组
+            for (var i = 0; i < parameters.length; i++) {
+                console.log("参数键值对值" + i + ":" + parameters[i]);
+                var m1 = parameters[i].length;//获得每个键值对的长度
+                var m2 = parameters[i].indexOf("=");//获得每个键值对=号的位置
+                var value = parameters[i].substr(m2 + 1, m1 - m2);//获取每个键值对=号后面具体的值
+                var key = parameters[i].substr(0, m2);
+                paValue[i] = value;
+            }
+            this.newsId = paValue[0];
+        },
+        mounted: function () {
+            this.instance.get('/user/news/' + this.newsId).then(res => {
+                var obj = res.data;
+                if (obj.status === 'success') {
+                    this.news = obj.data;
+                } else {
+                    if (obj.data === 'notLogin') {
+                        alert("用户未登录");
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(obj.data.errorMsg);
+                        location.reload();
+                    }
+
+                }
+            })
+        },
+        methods:{
+            dateFormat:function (datetime) {
+                var time = dayjs(datetime).format('YYYY年MM月DD日 HH:mm:ss');
+                return time;
+            },
+        }
+    })
+</script>
+</html>

@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh" class="no-js" xmlns:v-bind="http://www.w3.org/1999/xhtml" xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>预约信息</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="js/jquery-1.11.0.min.js"></script>
+    <link href="http://libs.baidu.com/bootstrap/3.0.3/css/bootstrap.css" rel="stylesheet">
+    <script src="http://libs.baidu.com/bootstrap/3.0.3/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="css/reset.css"> <!-- CSS reset -->
+    <link rel="stylesheet" href="css/detail.css"> <!-- Gem style -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/dayjs"></script>
+
+    <link rel="stylesheet" href="css/comment2.css">
+    <link rel="stylesheet" href="css/comment.css">
+
+    <link rel="stylesheet" href="css/animated-border.css">
+    <script src="js/url.js"></script>
+</head>
+<body>
+<div id="venue_detail">
+    <section id="cd-table">
+        <header class="cd-table-column">
+            <h2>场馆预约</h2>
+            <ul>
+                <li v-for="timeSlot in timeSlots">{{timeSlot-1}}:00-{{timeSlot}}:00</li>
+                <li></li>
+            </ul>
+        </header>
+
+        <div class="cd-table-container">
+            <div class="cd-table-wrapper" id="cd-content">
+                <div class="cd-table-column">
+                    <h2>{{dates[0]}}</h2>
+                    <ul>
+                        <li v-for="timeSlot in timeSlots"><label style="display:block;">
+                            <input v-if="isChecked(0,timeSlot)" type="checkbox"
+                                   checked disabled>
+                            <input v-else
+                                   name="select0" v-bind:value="timeSlot" v-model="date0" type="checkbox"
+                            >
+                        </label></li>
+                        <li>
+                            <button class="btn btn-primary" @click="book(0)">预约</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="cd-table-column">
+                    <h2>{{dates[1]}}</h2>
+                    <ul>
+                        <li v-for="timeSlot in timeSlots"><label style="display:block;">
+                            <input
+                                    v-if="isChecked(1,timeSlot)" type="checkbox"
+                                    checked disabled>
+                            <input v-else
+                                   name="select1" v-bind:value="timeSlot" v-model="date1" type="checkbox"
+                            ></label></li>
+                        <li>
+                            <button class="btn btn-primary" @click="book(1)">预约</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="cd-table-column">
+                    <h2>{{dates[2]}}</h2>
+                    <ul>
+                        <li v-for="timeSlot in timeSlots"><label style="display:block;"><input
+                                v-if="isChecked(2,timeSlot)" type="checkbox"
+                                checked disabled>
+                            <input v-else
+                                   name="select2" v-bind:value="timeSlot" v-model="date2" type="checkbox"
+                            ></label></li>
+                        <li>
+                            <button class="btn btn-primary" @click="book(2)">预约</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="cd-table-column">
+                    <h2>{{dates[3]}}</h2>
+                    <ul>
+                        <li v-for="timeSlot in timeSlots"><label style="display:block;"><input
+                                v-if="isChecked(3,timeSlot)" type="checkbox"
+                                checked disabled>
+                            <input v-else
+                                   name="select3" v-bind:value="timeSlot" v-model="date3" type="checkbox"
+                            ></label></li>
+                        <li>
+                            <button class="btn btn-primary" @click="book(3)">预约</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="cd-table-column">
+                    <h2>{{dates[4]}}</h2>
+                    <ul>
+                        <li v-for="timeSlot in timeSlots"><label style="display:block;"><input
+                                v-if="isChecked(4,timeSlot)" type="checkbox"
+                                checked disabled>
+                            <input v-else
+                                   name="select4" v-bind:value="timeSlot" v-model="date4" type="checkbox"
+                            ></label></li>
+                        <li>
+                            <button class="btn btn-primary" @click="book(4)">预约</button>
+                        </li>
+                    </ul>
+                </div>
+
+            </div> <!-- cd-table-wrapper -->
+        </div> <!-- cd-table-container -->
+
+        <!--        <em class="cd-scroll-right"></em>-->
+    </section> <!-- cd-table -->
+
+    <div class="commentAll" style="width: 70%">
+        <!--评论区域 begin-->
+        <div class="reviewArea clearfix">
+            <textarea id="content" class="content comment-input" placeholder="发表你的评论&hellip;"
+                      onkeyup="keyUP(this)"></textarea>
+            <button @click="sendComment" class="plBtn">评论</button>
+        </div>
+        <!--评论区域 end-->
+        <!--回复区域 begin-->
+        <div class="comment-show ">
+            <div class="comment-show-con clearfix" v-for="comment in comment_list" v-bind:key="comment.commentId">
+                <div class="comment-show-con-list pull-left clearfix">
+                    <div class="pl-text clearfix">
+                        <a class="comment-size-name">{{comment.username}} : </a>
+                        <span class="my-pl-con">{{comment.content}}</span>
+                    </div>
+                    <div class="date-dz">
+                        <span class="date-dz-left pull-left comment-time">{{dateFormat(comment.time)}}</span>
+                    </div>
+
+                </div>
+            </div>
+            <!--            <div class="comment-show-con clearfix">-->
+            <!--                &lt;!&ndash;            <div class="comment-show-con-img pull-left"><img src="images/header-img-comment_03.png" alt=""></div>&ndash;&gt;-->
+            <!--                <div class="comment-show-con-list pull-left clearfix">-->
+            <!--                    <div class="pl-text clearfix">-->
+            <!--                        <a href="#" class="comment-size-name">张三 : </a>-->
+            <!--                        <span class="my-pl-con">&nbsp;来啊 造作啊!</span>-->
+            <!--                    </div>-->
+            <!--                    <div class="date-dz">-->
+            <!--                        <span class="date-dz-left pull-left comment-time">2017-5-2 11:11:39</span>-->
+            <!--                    </div>-->
+
+            <!--                </div>-->
+            <!--            </div>-->
+        </div>
+        <!--回复区域 end-->
+    </div>
+</div>
+
+</body>
+<script type="text/javascript" src="js/jquery.flexText.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $('.content').flexText();
+    });
+
+    function keyUP(t) {
+        var len = $(t).val().length;
+        if (len > 139) {
+            $(t).val($(t).val().substring(0, 140));
+        }
+    }
+</script>
+<script>
+    var myVue = new Vue({
+        el: '#venue_detail',
+        data: function () {
+            return {
+                venueId: '',
+                timeSlots: [],
+                occupiedInfo: [],
+                dates: [],
+                instance: '',
+                date0: [],
+                date1: [],
+                date2: [],
+                date3: [],
+                date4: [],
+                comment_list: []
+            }
+        },
+        created: function () {
+            var loc = location.href;//获取整个跳转地址内容，其实就是你传过来的整个地址字符串
+            console.log("我的地址" + loc);
+            var n1 = loc.length;//地址的总长
+            var n2 = loc.indexOf("?");//取得=号的位置
+            var parameter = decodeURI(loc.substr(n2 + 1, n1 - n2));//截取从?号后面的内容,也就是参数列表，因为传过来的路径是加了码的，所以要解码
+            var parameters = parameter.split("&");//从&处拆分，返回字符串数组
+            console.log("参数列表" + parameters);
+            var paValue = new Array();//创建一个用于保存具体值得数组
+            for (var i = 0; i < parameters.length; i++) {
+                console.log("参数键值对值" + i + ":" + parameters[i]);
+                var m1 = parameters[i].length;//获得每个键值对的长度
+                var m2 = parameters[i].indexOf("=");//获得每个键值对=号的位置
+                var value = parameters[i].substr(m2 + 1, m1 - m2);//获取每个键值对=号后面具体的值
+                var key = parameters[i].substr(0, m2);
+                paValue[i] = value;
+            }
+            this.venueId = paValue[0];
+            for (var i = 0; i < 5; i++) {
+                var date = dayjs().add(i, 'day').format("YYYY年MM月DD日");
+                this.dates.push(date);
+            }
+            axios.defaults.withCredentials = true;
+            this.instance = axios.create({
+                baseURL: baseUrl,
+                timeout: 1000
+            });
+            this.instance.get('/venue/' + this.venueId).then(res => {
+                let obj = res.data;
+                if (obj.status === 'success') {
+                    //console.log(obj.data)
+                    this.timeSlots = obj.data[0].timeSlots;
+                    this.occupiedInfo = obj.data;
+                } else {
+                    if (obj.data === 'notLogin') {
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(obj.data.errorMsg);
+                    }
+                }
+            });
+            this.instance.get('/comments/' + this.venueId).then(res => {
+                let obj = res.data;
+                if (obj.status === 'success') {
+                    this.comment_list = obj.data;
+                } else {
+                    if (obj.data === 'notLogin') {
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(obj.data.errorMsg);
+                    }
+                }
+            })
+
+        },
+        mounted: function () {
+
+        },
+        methods: {
+            dateFormat: function (datetime) {
+                var time = dayjs(datetime).format('YYYY年MM月DD日 HH:mm:ss');
+                return time;
+            },
+            isChecked: function (a, b) {
+                return this.occupiedInfo[a].occupiedTimeSlots.indexOf(b) !== -1;
+            },
+            book: function (index) {
+                var selectSlots;
+                if (index === 0) {
+                    selectSlots = this.date0;
+                } else if (index === 1) {
+                    selectSlots = this.date1;
+                } else if (index === 2) {
+                    selectSlots = this.date2;
+                } else if (index === 3) {
+                    selectSlots = this.date3;
+                } else if (index === 4) {
+                    selectSlots = this.date4;
+                }
+                if (selectSlots.length === 0) {
+                    alert("预约时段为空");
+                    return;
+                }
+                var info = '您选择了' + this.dates[index] + '的：';
+                for (var i = 0; i < selectSlots.length; i++) {
+                    var time = (selectSlots[i] - 1) + ":00--" + selectSlots[i] + ":00   "
+                    info = info + time
+                }
+                info = info + "确定预约以上时间段吗？";
+                var params = {
+                    date: this.dates[index],
+                    selectedTimeSlots: selectSlots
+                };
+                if (confirm(info) === true) {
+                    this.instance.patch('/venue/' + this.venueId, params).then(res => {
+                        var obj = res.data;
+                        if (obj.status == "success") {
+                            alert("预约成功");
+                            location.reload();
+                        } else {
+                            if (obj.data === 'notLogin') {
+                                window.location.href = 'login.html';
+                            } else {
+                                alert(obj.data.errorMsg);
+                                location.reload();
+                            }
+
+                        }
+                    })
+                }
+            },
+            sendComment: function () {
+                var content = $("#content").val();
+                this.instance.post('/' + this.venueId + '/comment', {
+                    content: content
+                }).then(res => {
+                    var obj = res.data;
+                    if (obj.status === "success") {
+                        alert("评论发表成功，等待管理员审核")
+                        $("#content").val("");
+                        //this.comment_list.push(obj.data);
+                    } else {
+                        if (obj.data === 'notLogin') {
+                            window.location.href = 'login.html';
+                        } else {
+                            alert(obj.data.errorMsg);
+                            location.reload();
+                        }
+
+                    }
+                })
+            }
+        }
+    });
+
+</script>
+</html>
+
