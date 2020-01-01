@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="css/reset.css"> <!-- CSS reset -->
     <link rel="stylesheet" href="css/detail.css"> <!-- Gem style -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <script src="https://unpkg.com/dayjs"></script>
+    <script src="js/axios.js"></script>
+    <script src="js/day.js"></script>
 
     <link rel="stylesheet" href="css/comment2.css">
     <link rel="stylesheet" href="css/comment.css">
@@ -277,7 +277,7 @@
                     selectedTimeSlots: selectSlots
                 };
                 if (confirm(info) === true) {
-                    this.instance.patch('/venue/' + this.venueId, params).then(res => {
+                    this.instance.put('/venue/' + this.venueId, params).then(res => {
                         var obj = res.data;
                         if (obj.status == "success") {
                             alert("预约成功");
