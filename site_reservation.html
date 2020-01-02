@@ -20,6 +20,8 @@
                 <img v-bind:src="venue.imgUrl" style="width: 300px;height: 215px">
                 <h4>{{venue.venueName}}</h4>
                 <p style="display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;overflow: hidden;height: 34px">
+                    <b>场地地址：</b>&nbsp;{{venue.site}}</p>
+                <p style="display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 2;overflow: hidden;height: 34px">
                     <b>场地介绍：</b>&nbsp;{{venue.description}}</p>
                 <p>{{venue.price}}元/小时</p>
                 <div style="float: right;padding: 10px"><a v-bind:href="'detail.html?id='+venue.venueId" target="_blank"
